@@ -41,7 +41,7 @@ config() ->
      },
      {rebar3_grisp,
       [
-       {version, default_otp_version()},
+       {version, all_otp_versions()}, % patch files depend on version
        {grisp, [master, hex]},
        {rebar3_grisp, {trigger, all_material_types()}},
        {grisp_tools, [master, hex]},
