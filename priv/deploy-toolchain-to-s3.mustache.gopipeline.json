@@ -36,7 +36,7 @@
             "shallow_clone": false,
             "filter": {
                 "ignore": [],
-                "whitelist": []
+                "whitelist": [ "deploy-toolchain.sh" ]
             },
             "destination": ".gocd",
             "auto_update": true,
@@ -88,7 +88,8 @@
                             "command": "/bin/bash",
                             "timeout": -1.0,
                             "arguments": [
-                                ".gocd/deploy-toolchain.sh"
+                                ".gocd/deploy-toolchain.sh",
+                                "grisp"
                             ],
                             "run_if": "passed",
                             "type": "exec"

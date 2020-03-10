@@ -6,7 +6,7 @@
     "environment_variables": [],
     "parameters": [],
     "materials": [
-{{#gitmaterial}}
+        {{#gitmaterial}}
         {
             "url": "{{ url }}",
             "branch": "master",
@@ -20,7 +20,7 @@
             "name": "{{ name }}",
             "type": "git"
         },
-{{/gitmaterial}}
+        {{/gitmaterial}}
 {{#scmmaterial}}
 {
     "scm_id": "{{ id }}",
@@ -34,30 +34,13 @@
     "type": "plugin"
 },
 {{/scmmaterial}}
-{{#fetch_toolchain}}
-        {
-            "pipeline": "grisp-software",
-            "stage": "build",
-            "name": "grisp-software",
-            "type": "dependency"
-        },
-
-{{/fetch_toolchain}}
-        {{#upstream_pipeline}}
-        {
-            "pipeline": "{{name}}",
-            "stage": "build",
-            "name": "{{name}}",
-            "type": "dependency"
-        },
-        {{/upstream_pipeline}}
         {
             "url": "https://github.com/grisp/grisp-gocd.git",
             "branch": "master",
             "shallow_clone": false,
             "filter": {
                 "ignore": [],
-                "whitelist": ["install-env.sh", "grisp-project.sh"]
+                "whitelist": ["build-toolchain.sh"]
             },
             "destination": ".gocd",
             "auto_update": true,
@@ -89,16 +72,19 @@
                     "tabs": [],
                     "resources": [],
                     "artifacts": [
-                        {{#build_otp}}
                         {
-                            "source": "grisp_otp*.tar.gz",
-                            "destination": "otp",
+                            "source": "grisp_toolchain*.tar.gz",
+                            "destination": "toolchain",
                             "type": "build"
                         },
-                        {{/build_otp}}
                         {
-                            "source": "grisp_release*.tar.gz",
-                            "destination": "grisp_release/",
+                            "source": "grisp-software/rtems-source-builder/rtems/rsb-report*",
+                            "destination": "rsb-reports",
+                            "type": "build"
+                        },
+                        {
+                            "source": "TOOLCHAIN_REVISION",
+                            "destination": "toolchain",
                             "type": "build"
                         }
                     ],
@@ -106,47 +92,11 @@
                     "run_instance_count": "0",
                     "timeout": 0.0,
                     "tasks": [
-                        {{#fetch_toolchain}}
-                        {
-                            "source": "toolchain",
-                            "is_source_a_file": false,
-                            "destination": "",
-                            "pipeline": "grisp-software",
-                            "stage": "build",
-                            "job": "build.sh",
-                            "artifact_origin": "gocd",
-                            "run_if": "passed",
-                            "type": "fetch"
-                        },
-                        {{/fetch_toolchain}}
                         {
                             "command": "/bin/bash",
                             "timeout": -1.0,
                             "arguments": [
-                                ".gocd/install-env.sh"
-                            ],
-                            "run_if": "passed",
-                            "type": "exec"
-                        },
-{{#checkout}}
-                        {
-                            "command": "/usr/bin/git",
-                            "timeout": -1.0,
-                            "arguments": [
-                                "clone",
-                                "{{url}}",
-                                "{{destination}}"
-                            ],
-                            "run_if": "passed",
-                            "type": "exec"
-                        },
-{{/checkout}}
-                        {
-                            "command": "/bin/bash",
-                            "timeout": -1.0,
-                            "arguments": [
-                                ".gocd/grisp-project.sh",
-                                "--erlang-version={{version}}" {{#scmmaterial}}, "--use-{{name}}-material" {{/scmmaterial}}{{#gitmaterial}}, "--use-{{name}}-material"{{/gitmaterial}}{{#checkout}}, "--use-{{name}}-material"{{/checkout}}{{^build_otp}}, "--prebuilt-otp"{{/build_otp}}{{^fetch_toolchain}},"--toolchain-from-s3" {{/fetch_toolchain}}
+                                ".gocd/build-toolchain.sh"
                             ],
                             "run_if": "passed",
                             "type": "exec"

@@ -29,7 +29,7 @@
             "shallow_clone": false,
             "filter": {
                 "ignore": [],
-                "whitelist": []
+                "whitelist": [ "deploy-otp.sh" ]
             },
             "destination": ".gocd",
             "auto_update": true,

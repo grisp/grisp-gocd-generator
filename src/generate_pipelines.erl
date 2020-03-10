@@ -8,29 +8,46 @@
          resolve_funs/1,
          acc_template_data/4,
          vertex_map/2,
-         graph_to_list/1
+         graph_to_list/1,
+         all_otp_versions/0,
+         default_otp_version/0,
+         all_material_types/0
         ]).
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
+all_otp_versions() ->
+    [ "20.2", "21.0-rc1", "21.0", "22.0" ].
+default_otp_version() ->
+    [ "21.0" ].
+all_material_types() ->
+    [ master, fb, pr ].
+
+
 %% escript Entry point
 main(_Args) ->
     GrispTemplateData = generate_pipelines_grisp:get_template_data(),
     DeployOTPTemplateData = generate_pipelines_deploy_otp:get_template_data(GrispTemplateData),
     DeployToolchainTemplateData = generate_pipelines_deploy_toolchain:get_template_data(GrispTemplateData),
-
-    io:format("Template Data: ~n~p~n~p~n~p~n",
-              [GrispTemplateData, DeployOTPTemplateData, DeployToolchainTemplateData]),
+    GrispSoftwareTemplateData = generate_pipelines_grisp_software:get_template_data(),
 
     Templates =
-        [{"deploy-otp-to-s3", render_template(<<"./priv/deploy-otp-to-s3.mustache.gopipeline.json">>, DeployOTPTemplateData)}] ++
-        [{"deploy-toolchain-to-s3", render_template(<<"./priv/deploy-toolchain-to-s3.mustache.gopipeline.json">>, DeployToolchainTemplateData)}] ++
+        [{"deploy-otp-to-s3",
+          render_template(<<"./priv/deploy-otp-to-s3.mustache.gopipeline.json">>,
+                          DeployOTPTemplateData)}] ++
+        [{"deploy-toolchain-to-s3",
+          render_template(<<"./priv/deploy-toolchain-to-s3.mustache.gopipeline.json">>,
+                          DeployToolchainTemplateData)}] ++
         lists:map(fun (Vals) ->
                           {value, {name, Name}} = lists:keysearch(name, 1, Vals),
                           {Name, render_template(<<"./priv/grisp.mustache.gopipeline.json">>, Vals)}
-                  end, GrispTemplateData),
+                  end, GrispTemplateData) ++
+        lists:map(fun (Vals) ->
+                          {value, {name, Name}} = lists:keysearch(name, 1, Vals),
+                          {Name, render_template(<<"./priv/grisp-software.mustache.gopipeline.json">>, Vals)}
+                  end, GrispSoftwareTemplateData),
 
     lists:map(fun ({Name, Val}) ->
                       file:write_file("grisp-gocd-config/" ++ Name ++ ".gopipeline.json", Val) end, Templates),
@@ -95,7 +112,6 @@ build_dep_graph(Config) ->
                               %% Add vertex and edge for downstream pipeline
                               lists:map(fun ({Key, Val}) ->
                                                 %% same config just with replaced {key, val}
-                                                io:format("strewe"),
                                                 ConfDS = lists:keyreplace(Key, 1, Conf, {Key, Val}),
                                                 DownstreamV = digraph:add_vertex(G),
                                                 DownstreamV = digraph:add_vertex(G, DownstreamV, ConfDS),
@@ -139,7 +155,6 @@ acc_template_data(Config, Graph, Vertex, Fun) ->
                                (_Else) -> true
                            end, Processed),
     UpstreamPipelines = lists:map(fun (Edge) ->
-                                          io:format("yolo"),
                                           {Edge, FromV, _ToV, _Label} = digraph:edge(Graph, Edge),
                                           {FromV, UpstreamData} = digraph:vertex(Graph, FromV),
                                           [lists:keyfind(name, 1, UpstreamData)]

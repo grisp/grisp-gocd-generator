@@ -1,6 +1,8 @@
 -module(generate_pipelines_grisp).
 -export([get_template_data/0]).
 -export([transform_dep/1]).
+-import(generate_pipelines, [all_otp_versions/0, default_otp_version/0, all_material_types/0]).
+
 get_template_data() ->
     Config = get_full_config(config()),
     Permutations = generate_pipelines:get_permutations(Config),
@@ -15,12 +17,6 @@ get_template_data() ->
                                   end, Graph),
     generate_pipelines:graph_to_list(Graph).
 
-all_otp_versions() ->
-    [ "20.2", "21.0-rc1", "21.0", "22.0" ].
-default_otp_version() ->
-    [ "21.0" ].
-all_material_types() ->
-    [ master, fb, pr ].
 
 config() ->
     [
